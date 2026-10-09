@@ -17,4 +17,4 @@ Thumbs.db
 
 # Testes e2e
 playwright-report/
-test-results/
+test-results/*.tsbuildinfo
