@@ -253,9 +253,6 @@ importers:
       react-dom:
         specifier: ^19.2.8
         version: 19.3.0(react@19.3.0)
-      shadcn:
-        specifier: 4.21.4
-        version: 4.21.4(supports-color@7.2.0)
       tw-animate-css:
         specifier: 1.4.0
         version: 1.4.0
@@ -278,6 +275,9 @@ importers:
       oxlint:
         specifier: ^1.81.0
         version: 1.87.0(oxlint-tsgolint@7.0.2003)
+      shadcn:
+        specifier: 4.21.4
+        version: 4.21.4(supports-color@7.2.0)
       tailwindcss:
         specifier: 4.3.3
         version: 4.3.3
