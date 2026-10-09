@@ -1,0 +1,17 @@
+{
+  "name": "sistema-locacao",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "forwardPorts": [3000, 5173],
+  "postCreateCommand": "npm install -g pnpm && sudo apt-get update && sudo apt-get install -y postgresql-client",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "Prisma.prisma"
+      ]
+    }
+  }
+}
