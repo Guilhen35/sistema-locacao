@@ -1,6 +1,7 @@
 import { createBrowserRouter, Link } from 'react-router'
 import { AppLayout } from '@/components/layout/app-layout'
 import { PagePlaceholder } from '@/components/layout/page-placeholder'
+import { LoginPage } from '@/pages/login-page'
 
 function NotFound() {
   return (
@@ -18,6 +19,7 @@ function NotFound() {
 }
 
 export const router = createBrowserRouter([
+  { path: '/login', element: <LoginPage /> },
   {
     path: '/',
     element: <AppLayout />,
