@@ -7,4 +7,10 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
+  server: {
+    // Em dev, /api vai para a API: tela e API ficam no mesmo endereço (cookie SameSite funciona)
+    proxy: {
+      '/api': 'http://localhost:3000',
+    },
+  },
 })
