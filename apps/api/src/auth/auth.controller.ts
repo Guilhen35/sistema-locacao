@@ -1,11 +1,12 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, Header, HttpCode, HttpStatus, Post, Req, Res, UseGuards } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { loginSchema, type LoginInput } from '@locacao/shared';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { AuthService } from './auth.service.js';
+import { CurrentSession } from './current-session.decorator.js';
+import { type AuthenticatedSession, SESSION_COOKIE, SessionGuard } from './session.guard.js';
 
-// __Host- obriga o navegador a só aceitar o cookie com Secure, Path=/ e sem Domain
-export const SESSION_COOKIE = '__Host-sid';
+const COOKIE_OPTIONS = { httpOnly: true, secure: true, sameSite: 'strict', path: '/' } as const;
 
 @Controller('auth')
 export class AuthController {
@@ -13,6 +14,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @Header('Cache-Control', 'no-store')
   async login(
     @Body(new ZodValidationPipe(loginSchema)) body: LoginInput,
     @Req() req: Request,
@@ -23,15 +25,28 @@ export class AuthController {
       userAgent: req.get('user-agent'),
     });
 
-    res.cookie(SESSION_COOKIE, token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      path: '/',
-      expires: expiresAt,
-    });
+    res.cookie(SESSION_COOKIE, token, { ...COOKIE_OPTIONS, expires: expiresAt });
 
     // O token vai só no cookie, nunca no corpo da resposta
     return { user };
+  }
+
+  @Get('me')
+  @UseGuards(SessionGuard)
+  @Header('Cache-Control', 'no-store')
+  me(@CurrentSession() session: AuthenticatedSession) {
+    return { user: session.user };
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(SessionGuard)
+  async logout(
+    @CurrentSession() session: AuthenticatedSession,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.auth.logout(session.sessionId, session.user.id, req.ip);
+    res.clearCookie(SESSION_COOKIE, COOKIE_OPTIONS);
   }
 }

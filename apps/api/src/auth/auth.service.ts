@@ -7,6 +7,8 @@ import { generateSessionToken, hashSessionToken } from './session-token.js';
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCK_MINUTES = 15;
 export const SESSION_TTL_HOURS = 12;
+const IDLE_TIMEOUT_MS = 2 * 3_600_000;
+const LAST_SEEN_UPDATE_MS = 5 * 60_000;
 
 export interface RequestContext {
   ipAddress?: string;
@@ -80,6 +82,62 @@ export class AuthService {
       expiresAt,
       user: { id: user.id, name: user.name, email: user.email, mustChangePassword: user.mustChangePassword },
     };
+  }
+
+  async validateSession(token: string) {
+    const session = await this.prisma.session.findUnique({
+      where: { tokenHash: hashSessionToken(token) },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            isActive: true,
+            archivedAt: true,
+            mustChangePassword: true,
+            role: { select: { name: true } },
+          },
+        },
+      },
+    });
+
+    const now = Date.now();
+    if (
+      !session ||
+      session.revokedAt ||
+      session.expiresAt.getTime() <= now ||
+      now - session.lastSeenAt.getTime() > IDLE_TIMEOUT_MS ||
+      !session.user.isActive ||
+      session.user.archivedAt
+    ) {
+      return null;
+    }
+
+    // Grava o "visto por último" no máximo a cada 5 min, para não escrever no banco em toda requisição
+    if (now - session.lastSeenAt.getTime() > LAST_SEEN_UPDATE_MS) {
+      await this.prisma.session.update({ where: { id: session.id }, data: { lastSeenAt: new Date(now) } });
+    }
+
+    const { user } = session;
+    return {
+      sessionId: session.id,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role.name,
+        mustChangePassword: user.mustChangePassword,
+      },
+    };
+  }
+
+  async logout(sessionId: string, userId: string, ipAddress?: string) {
+    await this.prisma.session.updateMany({
+      where: { id: sessionId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    await this.audit('auth.logout', userId, ipAddress);
   }
 
   private invalidCredentials() {
