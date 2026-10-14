@@ -1,43 +1,73 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
-import { loginSchema } from '@locacao/shared';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { brand } from '@/config/brand';
-import logo from '@/assets/brand/logo.png';
-import background from '@/assets/brand/login-fundo.jpg';
+import { useEffect, useState, type FormEvent } from 'react'
+import { Navigate, useLocation, useNavigate } from 'react-router'
+import { Eye, EyeOff, LoaderCircle } from 'lucide-react'
+import { loginSchema } from '@locacao/shared'
+import { useAuth } from '@/auth/auth-context'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { brand } from '@/config/brand'
+import { ApiError } from '@/lib/api'
+import logo from '@/assets/brand/logo.png'
+import background from '@/assets/brand/login-fundo.jpg'
 
-type Field = 'email' | 'password';
-type FieldErrors = Partial<Record<Field, string>>;
+type Field = 'email' | 'password'
+type FieldErrors = Partial<Record<Field, string>>
+
+// Aceita só caminhos internos: bloqueia Open Redirect para outro site
+function safeRedirect(value: unknown): string {
+  if (typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') && !value.startsWith('/\\')) {
+    return value
+  }
+  return '/'
+}
 
 export function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<FieldErrors>({});
+  const { status, user, login } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [showPassword, setShowPassword] = useState(false)
+  const [errors, setErrors] = useState<FieldErrors>({})
+  const [formError, setFormError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    document.title = `Entrar · ${brand.name}`;
-  }, []);
+    document.title = `Entrar · ${brand.name}`
+  }, [])
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
+  if (status === 'authenticated' && user && !submitting) return <Navigate to="/" replace />
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (submitting) return
+
+    const form = new FormData(event.currentTarget)
     const result = loginSchema.safeParse({
       email: String(form.get('email') ?? ''),
       password: String(form.get('password') ?? ''),
-    });
+    })
 
     if (!result.success) {
-      const next: FieldErrors = {};
+      const next: FieldErrors = {}
       for (const issue of result.error.issues) {
-        const key = issue.path[0];
-        if ((key === 'email' || key === 'password') && !next[key]) next[key] = issue.message;
+        const key = issue.path[0]
+        if ((key === 'email' || key === 'password') && !next[key]) next[key] = issue.message
       }
-      setErrors(next);
-      return;
+      setErrors(next)
+      return
     }
 
-    setErrors({});
-    // Próximo passo: enviar result.data para a API
+    setErrors({})
+    setFormError(null)
+    setSubmitting(true)
+
+    try {
+      const loggedUser = await login(result.data)
+      const from = (location.state as { from?: unknown } | null)?.from
+      navigate(loggedUser.mustChangePassword ? '/trocar-senha' : safeRedirect(from), { replace: true })
+    } catch (error) {
+      setFormError(error instanceof ApiError ? error.message : 'Não foi possível entrar. Tente novamente.')
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -69,12 +99,19 @@ export function LoginPage() {
           <form
             noValidate
             onSubmit={handleSubmit}
+            aria-busy={submitting}
             className="flex w-full max-w-100 flex-col gap-5 rounded-2xl bg-card p-8 text-card-foreground shadow-2xl"
           >
             <div>
               <h1 className="text-2xl font-bold">Entrar no sistema</h1>
               <p className="mt-2 text-muted-foreground">Use o e-mail e a senha da sua conta.</p>
             </div>
+
+            {formError && (
+              <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2.5 text-sm text-destructive">
+                {formError}
+              </p>
+            )}
 
             <div className="flex flex-col gap-1.5">
               <label htmlFor="email" className="text-sm font-semibold">
@@ -128,8 +165,9 @@ export function LoginPage() {
               )}
             </div>
 
-            <Button type="submit" size="lg" className="h-12 text-base font-bold">
-              Entrar
+            <Button type="submit" size="lg" disabled={submitting} className="h-12 text-base font-bold">
+              {submitting && <LoaderCircle aria-hidden="true" className="size-5 animate-spin" />}
+              {submitting ? 'Entrando…' : 'Entrar'}
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
@@ -139,5 +177,5 @@ export function LoginPage() {
         </main>
       </div>
     </div>
-  );
+  )
 }

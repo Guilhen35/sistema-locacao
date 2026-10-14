@@ -1,4 +1,5 @@
 import { createBrowserRouter, Link } from 'react-router'
+import { RequireAuth } from '@/auth/require-auth'
 import { AppLayout } from '@/components/layout/app-layout'
 import { PagePlaceholder } from '@/components/layout/page-placeholder'
 import { LoginPage } from '@/pages/login-page'
@@ -21,52 +22,68 @@ function NotFound() {
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   {
-    path: '/',
-    element: <AppLayout />,
+    // Tudo aqui dentro exige sessão válida
+    element: <RequireAuth />,
     children: [
       {
-        index: true,
+        path: '/trocar-senha',
         element: (
-          <PagePlaceholder title="Dashboard" description="Visão geral da frota, das locações e do financeiro." />
+          <main className="p-8">
+            <PagePlaceholder title="Trocar senha" description="Crie uma senha nova para continuar." />
+          </main>
         ),
       },
       {
-        path: 'clientes',
-        element: <PagePlaceholder title="Clientes" description="Cadastro de clientes e histórico de locações." />,
+        path: '/',
+        element: <AppLayout />,
+        children: [
+          {
+            index: true,
+            element: (
+              <PagePlaceholder title="Dashboard" description="Visão geral da frota, das locações e do financeiro." />
+            ),
+          },
+          {
+            path: 'clientes',
+            element: <PagePlaceholder title="Clientes" description="Cadastro de clientes e histórico de locações." />,
+          },
+          {
+            path: 'maquinas',
+            element: <PagePlaceholder title="Máquinas" description="Frota, categorias, fotos e características." />,
+          },
+          {
+            path: 'contratos',
+            element: <PagePlaceholder title="Contratos" description="Locações, renovações e documentos." />,
+          },
+          {
+            path: 'agenda',
+            element: <PagePlaceholder title="Agenda" description="Calendário e linha do tempo da frota." />,
+          },
+          {
+            path: 'financeiro',
+            element: <PagePlaceholder title="Financeiro" description="Pagamentos, contas a receber e atrasos." />,
+          },
+          {
+            path: 'manutencao',
+            element: <PagePlaceholder title="Manutenção" description="Manutenções preventivas, corretivas e custos." />,
+          },
+          {
+            path: 'relatorios',
+            element: <PagePlaceholder title="Relatórios" description="Relatórios gerenciais e exportações." />,
+          },
+          {
+            path: 'configuracoes',
+            element: <PagePlaceholder title="Configurações" description="Dados da empresa, usuários e permissões." />,
+          },
+          {
+            path: 'perfil',
+            element: (
+              <PagePlaceholder title="Meu perfil" description="Seus dados, senha e verificação em duas etapas." />
+            ),
+          },
+          { path: '*', element: <NotFound /> },
+        ],
       },
-      {
-        path: 'maquinas',
-        element: <PagePlaceholder title="Máquinas" description="Frota, categorias, fotos e características." />,
-      },
-      {
-        path: 'contratos',
-        element: <PagePlaceholder title="Contratos" description="Locações, renovações e documentos." />,
-      },
-      {
-        path: 'agenda',
-        element: <PagePlaceholder title="Agenda" description="Calendário e linha do tempo da frota." />,
-      },
-      {
-        path: 'financeiro',
-        element: <PagePlaceholder title="Financeiro" description="Pagamentos, contas a receber e atrasos." />,
-      },
-      {
-        path: 'manutencao',
-        element: <PagePlaceholder title="Manutenção" description="Manutenções preventivas, corretivas e custos." />,
-      },
-      {
-        path: 'relatorios',
-        element: <PagePlaceholder title="Relatórios" description="Relatórios gerenciais e exportações." />,
-      },
-      {
-        path: 'configuracoes',
-        element: <PagePlaceholder title="Configurações" description="Dados da empresa, usuários e permissões." />,
-      },
-      {
-        path: 'perfil',
-        element: <PagePlaceholder title="Meu perfil" description="Seus dados, senha e verificação em duas etapas." />,
-      },
-      { path: '*', element: <NotFound /> },
     ],
   },
 ])
