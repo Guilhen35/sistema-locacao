@@ -4,6 +4,7 @@ import { AppLayout } from '@/components/layout/app-layout'
 import { PagePlaceholder } from '@/components/layout/page-placeholder'
 import { LoginPage } from '@/pages/login-page'
 import { ClientsPage } from '@/pages/clients-page'
+import { ClientFormPage } from '@/pages/client-form-page'
 import { ChangePasswordPage } from '@/pages/change-password-page'
 
 function NotFound() {
@@ -45,6 +46,8 @@ export const router = createBrowserRouter([
             path: 'clientes',
             element: <ClientsPage />,
           },
+          { path: 'clientes/novo', element: <ClientFormPage /> },
+          { path: 'clientes/:id', element: <ClientFormPage /> },
           {
             path: 'maquinas',
             element: <PagePlaceholder title="Máquinas" description="Frota, categorias, fotos e características." />,
