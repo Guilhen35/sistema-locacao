@@ -20,6 +20,18 @@ const PERMISSIONS: ReadonlyArray<readonly [string, string]> = [
   ['auditoria:ler', 'Ver o histórico de auditoria'],
 ];
 
+// Só o admin controla quem entra no sistema e vê quem fez o quê
+const ADMIN_ONLY = new Set(['usuarios:gerenciar', 'auditoria:ler']);
+
+const ROLES = [
+  { name: 'admin', description: 'Acesso total ao sistema', permissions: PERMISSIONS.map(([key]) => key) },
+  {
+    name: 'equipe',
+    description: 'Operação do dia a dia, sem gestão de usuários e auditoria',
+    permissions: PERMISSIONS.map(([key]) => key).filter((key) => !ADMIN_ONLY.has(key)),
+  },
+];
+
 const databaseUrl = process.env['DATABASE_URL'];
 const adminName = process.env['SEED_ADMIN_NAME']?.trim();
 const adminEmail = process.env['SEED_ADMIN_EMAIL']?.trim().toLowerCase();
@@ -31,24 +43,40 @@ if (!databaseUrl || !adminName || !adminEmail) {
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
 
 async function main(name: string, email: string) {
-  const adminRole = await prisma.role.upsert({
-    where: { name: 'admin' },
-    update: {},
-    create: { name: 'admin', description: 'Acesso total ao sistema' },
-  });
-
+  const permissionIds = new Map<string, string>();
   for (const [key, description] of PERMISSIONS) {
     const permission = await prisma.permission.upsert({
       where: { key },
       update: { description },
       create: { key, description },
     });
-    await prisma.rolePermission.upsert({
-      where: { roleId_permissionId: { roleId: adminRole.id, permissionId: permission.id } },
-      update: {},
-      create: { roleId: adminRole.id, permissionId: permission.id },
-    });
+    permissionIds.set(key, permission.id);
   }
+
+  const roleIds = new Map<string, string>();
+  for (const role of ROLES) {
+    const saved = await prisma.role.upsert({
+      where: { name: role.name },
+      update: { description: role.description },
+      create: { name: role.name, description: role.description },
+    });
+    roleIds.set(role.name, saved.id);
+
+    // Sincroniza: remove permissões que saíram da lista e adiciona as novas
+    const wanted = role.permissions.map((key) => permissionIds.get(key)).filter((id): id is string => !!id);
+    await prisma.rolePermission.deleteMany({ where: { roleId: saved.id, permissionId: { notIn: wanted } } });
+    for (const permissionId of wanted) {
+      await prisma.rolePermission.upsert({
+        where: { roleId_permissionId: { roleId: saved.id, permissionId } },
+        update: {},
+        create: { roleId: saved.id, permissionId },
+      });
+    }
+    console.log(`Perfil ${role.name}: ${wanted.length} permissões`);
+  }
+
+  const adminRoleId = roleIds.get('admin');
+  if (!adminRoleId) throw new Error('Perfil admin não foi criado');
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
@@ -62,7 +90,7 @@ async function main(name: string, email: string) {
       name,
       email,
       passwordHash: await hashPassword(tempPassword),
-      roleId: adminRole.id,
+      roleId: adminRoleId,
       mustChangePassword: true,
     },
   });

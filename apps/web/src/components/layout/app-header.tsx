@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { THEMES, useTheme, type Theme } from '@/components/theme/theme-context'
+import { useAuth } from '@/auth/auth-context'
 
 const themeLabels: Record<Theme, string> = {
   light: 'Claro',
@@ -26,6 +27,7 @@ const iconButton =
 export function AppHeader() {
   const navigate = useNavigate()
   const { theme, setTheme } = useTheme()
+  const { user, logout } = useAuth()
   const unreadCount = 0
 
   const handleThemeChange = (value: unknown) => {
@@ -102,7 +104,7 @@ export function AppHeader() {
 
             <DropdownMenuSeparator />
 
-            <DropdownMenuItem disabled>
+            <DropdownMenuItem onClick={() => void logout()}>
               <LogOut aria-hidden="true" />
               Sair
             </DropdownMenuItem>
@@ -111,7 +113,7 @@ export function AppHeader() {
 
         <div className="hidden items-center gap-2 text-sm sm:flex">
           <CircleUser className="size-8 text-muted-foreground" aria-hidden="true" />
-          <span>Usuário</span>
+          <span>{user?.name ?? 'Usuário'}</span>
         </div>
       </div>
     </header>
