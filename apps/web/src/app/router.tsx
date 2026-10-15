@@ -3,6 +3,7 @@ import { RequireAuth } from '@/auth/require-auth'
 import { AppLayout } from '@/components/layout/app-layout'
 import { PagePlaceholder } from '@/components/layout/page-placeholder'
 import { LoginPage } from '@/pages/login-page'
+import { ChangePasswordPage } from '@/pages/change-password-page'
 
 function NotFound() {
   return (
@@ -27,11 +28,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: '/trocar-senha',
-        element: (
-          <main className="p-8">
-            <PagePlaceholder title="Trocar senha" description="Crie uma senha nova para continuar." />
-          </main>
-        ),
+        element: <ChangePasswordPage />,
       },
       {
         path: '/',
