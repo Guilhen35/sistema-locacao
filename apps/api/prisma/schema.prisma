@@ -139,3 +139,83 @@ model Client {
   @@index([city])
   @@map("clients")
 }
+
+enum MachineCategory {
+  SCISSOR
+  ARTICULATED
+  TELESCOPIC
+  MAST
+  OTHER
+
+  @@map("machine_category")
+}
+
+enum PowerSource {
+  ELECTRIC
+  DIESEL
+  HYBRID
+  GAS
+
+  @@map("power_source")
+}
+
+model MachineType {
+  id                 String          @id @default(uuid(7)) @db.Uuid
+  name               String          @unique @db.VarChar(100)
+  category           MachineCategory
+  powerSource        PowerSource     @map("power_source")
+  workingHeightM     Decimal         @map("working_height_m") @db.Decimal(5, 2)
+  capacityKg         Int             @map("capacity_kg")
+  usage              String?         @db.VarChar(200)
+  dailyPrice         Decimal         @map("daily_price") @db.Decimal(10, 2)
+  weeklyPrice        Decimal?        @map("weekly_price") @db.Decimal(10, 2)
+  monthlyPrice       Decimal?        @map("monthly_price") @db.Decimal(10, 2)
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+  archivedAt         DateTime?       @map("archived_at")
+
+  machines Machine[]
+
+  @@map("machine_types")
+}
+
+model Machine {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  code          String    @unique @db.VarChar(20)
+  typeId        String    @map("type_id") @db.Uuid
+  manufacturer  String?   @db.VarChar(100)
+  model         String?   @db.VarChar(100)
+  year          Int?
+  serialNumber  String?   @map("serial_number") @db.VarChar(100)
+  assetTag      String?   @map("asset_tag") @db.VarChar(50)
+  hourMeter     Int?      @map("hour_meter")
+  blocked       Boolean   @default(false)
+  blockedReason String?   @map("blocked_reason") @db.VarChar(300)
+  showOnWebsite Boolean   @default(false) @map("show_on_website")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  archivedAt    DateTime? @map("archived_at")
+
+  type   MachineType    @relation(fields: [typeId], references: [id], onDelete: Restrict)
+  photos MachinePhoto[]
+
+  @@index([typeId])
+  @@map("machines")
+}
+
+model MachinePhoto {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  machineId  String   @map("machine_id") @db.Uuid
+  // Nome aleatório gerado pela API, nunca o nome do arquivo enviado
+  storageKey String   @unique @map("storage_key") @db.VarChar(100)
+  position   Int
+  width      Int
+  height     Int
+  sizeBytes  Int      @map("size_bytes")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  @@index([machineId, position])
+  @@map("machine_photos")
+}
