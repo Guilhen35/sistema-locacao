@@ -23,6 +23,10 @@ export class PermissionGuard implements CanActivate {
     ]);
     const req = context.switchToHttp().getRequest<AuthenticatedRequest>();
 
+    if (req.auth?.user.mustChangePassword) {
+      throw new ForbiddenException('Troque a senha temporária antes de continuar');
+    }
+
     // Sem permissão declarada ou sem sessão: nega por padrão
     if (!required || !req.auth?.user.permissions.includes(required)) {
       throw new ForbiddenException('Você não tem permissão para esta ação');
