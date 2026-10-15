@@ -36,7 +36,7 @@ function setup(user: ReturnType<typeof makeUser> | null, failedLoginCount = 1) {
       findUnique: vi.fn().mockResolvedValue(user),
       update: vi.fn().mockResolvedValue({ failedLoginCount }),
     },
-    session: { create: vi.fn().mockResolvedValue({}) },
+    session: { create: vi.fn().mockResolvedValue({}), updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
     auditLog: { create: vi.fn().mockResolvedValue({}) },
     $transaction: vi.fn().mockResolvedValue([]),
   };
@@ -95,6 +95,7 @@ describe('AuthService.login', () => {
     expect(minutes).toBeGreaterThan(14);
     expect(minutes).toBeLessThanOrEqual(15);
     expectAudit(prisma, 'auth.conta_bloqueada');
+    expect(prisma.session.updateMany).toHaveBeenCalled();
   });
 
   it('recusa conta bloqueada mesmo com a senha correta', async () => {

@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Header, HttpCode, HttpStatus, Post, Req, Res, UseGuards } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { loginSchema, type LoginInput } from '@locacao/shared';
+import { changePasswordSchema, loginSchema, type ChangePasswordInput, type LoginInput } from '@locacao/shared';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { AuthService } from './auth.service.js';
 import { CurrentSession } from './current-session.decorator.js';
@@ -36,6 +36,17 @@ export class AuthController {
   @Header('Cache-Control', 'no-store')
   me(@CurrentSession() session: AuthenticatedSession) {
     return { user: session.user };
+  }
+
+  @Post('change-password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(SessionGuard)
+  async changePassword(
+    @Body(new ZodValidationPipe(changePasswordSchema)) body: ChangePasswordInput,
+    @CurrentSession() session: AuthenticatedSession,
+    @Req() req: Request,
+  ) {
+    await this.auth.changePassword(session.user.id, session.sessionId, body, req.ip);
   }
 
   @Post('logout')

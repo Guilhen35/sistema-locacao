@@ -1,5 +1,5 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import type { LoginInput } from '@locacao/shared';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import type { ChangePasswordInput, LoginInput } from '@locacao/shared';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { hashPassword, verifyPassword } from './password.js';
 import { generateSessionToken, hashSessionToken } from './session-token.js';
@@ -42,22 +42,7 @@ export class AuthService {
     const valid = await verifyPassword(user.passwordHash, input.password);
 
     if (!valid) {
-      // Incremento atômico: duas tentativas ao mesmo tempo não "perdem" a contagem
-      const { failedLoginCount } = await this.prisma.user.update({
-        where: { id: user.id },
-        data: { failedLoginCount: { increment: 1 } },
-        select: { failedLoginCount: true },
-      });
-
-      if (failedLoginCount >= MAX_FAILED_ATTEMPTS) {
-        await this.prisma.user.update({
-          where: { id: user.id },
-          data: { failedLoginCount: 0, lockedUntil: new Date(Date.now() + LOCK_MINUTES * 60_000) },
-        });
-        await this.audit('auth.conta_bloqueada', user.id, ipAddress);
-      } else {
-        await this.audit('auth.login_falhou', user.id, ipAddress, { motivo: 'senha_incorreta' });
-      }
+      await this.registerFailure(user.id, ipAddress, 'auth.login_falhou');
       throw this.invalidCredentials();
     }
 
@@ -132,12 +117,73 @@ export class AuthService {
     };
   }
 
+  async changePassword(userId: string, sessionId: string, input: ChangePasswordInput, ipAddress?: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true, email: true },
+    });
+
+    if (!user || !(await verifyPassword(user.passwordHash, input.currentPassword))) {
+      await this.registerFailure(userId, ipAddress, 'auth.troca_senha_falhou');
+      throw this.fieldError('currentPassword', 'Senha atual incorreta');
+    }
+
+    const emailName = user.email.split('@')[0] ?? '';
+    if (emailName.length >= 3 && input.newPassword.toLowerCase().includes(emailName)) {
+      throw this.fieldError('newPassword', 'Não use o seu e-mail na senha');
+    }
+
+    const now = new Date();
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { passwordHash: await hashPassword(input.newPassword), mustChangePassword: false, failedLoginCount: 0 },
+      }),
+      // Derruba as outras sessões: quem tinha a senha antiga perde o acesso
+      this.prisma.session.updateMany({
+        where: { userId, id: { not: sessionId }, revokedAt: null },
+        data: { revokedAt: now },
+      }),
+      this.prisma.auditLog.create({
+        data: { userId, action: 'auth.senha_trocada', entity: 'user', entityId: userId, ipAddress },
+      }),
+    ]);
+  }
+
   async logout(sessionId: string, userId: string, ipAddress?: string) {
     await this.prisma.session.updateMany({
       where: { id: sessionId, revokedAt: null },
       data: { revokedAt: new Date() },
     });
     await this.audit('auth.logout', userId, ipAddress);
+  }
+
+  // Conta erros de senha. Na 5ª, bloqueia a conta e derruba todas as sessões
+  private async registerFailure(userId: string, ipAddress: string | undefined, action: string) {
+    const { failedLoginCount } = await this.prisma.user.update({
+      where: { id: userId },
+      data: { failedLoginCount: { increment: 1 } },
+      select: { failedLoginCount: true },
+    });
+
+    if (failedLoginCount < MAX_FAILED_ATTEMPTS) {
+      await this.audit(action, userId, ipAddress);
+      return;
+    }
+
+    const now = new Date();
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { failedLoginCount: 0, lockedUntil: new Date(now.getTime() + LOCK_MINUTES * 60_000) },
+      }),
+      this.prisma.session.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: now } }),
+    ]);
+    await this.audit('auth.conta_bloqueada', userId, ipAddress);
+  }
+
+  private fieldError(field: string, message: string) {
+    return new BadRequestException({ message: 'Dados inválidos', errors: { [field]: [message] } });
   }
 
   private invalidCredentials() {
