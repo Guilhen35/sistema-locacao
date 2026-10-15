@@ -104,3 +104,38 @@ model AuditLog {
   @@index([createdAt])
   @@map("audit_logs")
 }
+
+enum ClientType {
+  INDIVIDUAL
+  COMPANY
+
+  @@map("client_type")
+}
+
+model Client {
+  id              String     @id @default(uuid(7)) @db.Uuid
+  type            ClientType
+  // CPF ou CNPJ, só números
+  document        String     @unique @db.VarChar(14)
+  name            String     @db.VarChar(200)
+  tradeName       String?    @map("trade_name") @db.VarChar(200)
+  contactName     String?    @map("contact_name") @db.VarChar(200)
+  contactDocument String?    @map("contact_document") @db.VarChar(11)
+  phone           String?    @db.VarChar(20)
+  whatsapp        String     @db.VarChar(20)
+  email           String?    @db.VarChar(254)
+  zipCode         String?    @map("zip_code") @db.VarChar(8)
+  street          String?    @db.VarChar(200)
+  number          String?    @db.VarChar(20)
+  district        String?    @db.VarChar(100)
+  city            String?    @db.VarChar(100)
+  state           String?    @db.Char(2)
+  notes           String?    @db.VarChar(2000)
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  archivedAt      DateTime?  @map("archived_at")
+
+  @@index([name])
+  @@index([city])
+  @@map("clients")
+}
