@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
+import { originCheck } from './common/middleware/origin-check.js';
 import { AppModule } from './app.module.js';
 
 async function bootstrap() {
@@ -10,6 +11,7 @@ async function bootstrap() {
 
   // Cabeçalhos de segurança; também remove o X-Powered-By
   app.use(helmet());
+  app.use(originCheck((process.env['WEB_ORIGIN'] ?? '').split(',').map((o) => o.trim()).filter(Boolean)));
 
   // Limite de tamanho das requisições (proteção contra DoS)
   app.useBodyParser('json', { limit: '100kb' });
