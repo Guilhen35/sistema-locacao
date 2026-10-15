@@ -1,1 +1,8 @@
+import { z } from 'zod';
+
+// Mensagens padrão do Zod em português
+z.config(z.locales.pt());
+
 export * from './auth.js';
+export * from './client.js';
+export * from './document.js';
