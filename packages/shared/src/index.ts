@@ -6,3 +6,4 @@ z.config(z.locales.pt());
 export * from './auth.js';
 export * from './client.js';
 export * from './document.js';
+export * from './machine.js';
