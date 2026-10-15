@@ -3,6 +3,7 @@ import { RequireAuth } from '@/auth/require-auth'
 import { AppLayout } from '@/components/layout/app-layout'
 import { PagePlaceholder } from '@/components/layout/page-placeholder'
 import { LoginPage } from '@/pages/login-page'
+import { ClientsPage } from '@/pages/clients-page'
 import { ChangePasswordPage } from '@/pages/change-password-page'
 
 function NotFound() {
@@ -42,7 +43,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'clientes',
-            element: <PagePlaceholder title="Clientes" description="Cadastro de clientes e histórico de locações." />,
+            element: <ClientsPage />,
           },
           {
             path: 'maquinas',
