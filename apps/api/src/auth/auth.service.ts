@@ -81,7 +81,7 @@ export class AuthService {
             isActive: true,
             archivedAt: true,
             mustChangePassword: true,
-            role: { select: { name: true } },
+            role: { select: { name: true, permissions: { select: { permission: { select: { key: true } } } } } },
           },
         },
       },
@@ -112,6 +112,7 @@ export class AuthService {
         name: user.name,
         email: user.email,
         role: user.role.name,
+        permissions: user.role.permissions.map((rp) => rp.permission.key),
         mustChangePassword: user.mustChangePassword,
       },
     };
