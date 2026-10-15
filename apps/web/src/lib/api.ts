@@ -49,6 +49,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   if (!response.ok) {
     // Erro 500 nunca mostra detalhe interno para o usuário
     if (response.status >= 500) throw new ApiError(response.status, GENERIC_ERROR)
+    if (response.status === 429) throw new ApiError(429, 'Muitas tentativas. Aguarde um minuto e tente de novo.')
     throw new ApiError(response.status, readMessage(data) ?? GENERIC_ERROR, readFieldErrors(data))
   }
 

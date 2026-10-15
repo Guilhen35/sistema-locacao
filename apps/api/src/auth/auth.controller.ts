@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Header, HttpCode, HttpStatus, Post, Req, Res, UseGuards } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import { Throttle } from '@nestjs/throttler';
 import { changePasswordSchema, loginSchema, type ChangePasswordInput, type LoginInput } from '@locacao/shared';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { AuthService } from './auth.service.js';
@@ -12,6 +13,7 @@ const COOKIE_OPTIONS = { httpOnly: true, secure: true, sameSite: 'strict', path:
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @Header('Cache-Control', 'no-store')
@@ -38,6 +40,7 @@ export class AuthController {
     return { user: session.user };
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('change-password')
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(SessionGuard)

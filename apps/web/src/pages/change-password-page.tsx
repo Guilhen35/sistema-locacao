@@ -160,6 +160,8 @@ export function ChangePasswordPage() {
                     {`Pelo menos ${PASSWORD_MIN_LENGTH} caracteres`}
                   </Rule>
                   <Rule ok={new Set(newPassword).size >= 5}>Caracteres variados</Rule>
+                  <Rule ok={/[A-Z]/.test(newPassword)}>Uma letra maiúscula</Rule>
+                  <Rule ok={/[^A-Za-z0-9]/.test(newPassword)}>Um caractere especial</Rule>
                 </ul>
               )}
               {field === 'confirmPassword' && confirmPassword.length > 0 && (
