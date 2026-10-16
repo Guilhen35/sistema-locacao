@@ -135,6 +135,8 @@ model Client {
   updatedAt       DateTime   @updatedAt @map("updated_at")
   archivedAt      DateTime?  @map("archived_at")
 
+  contracts Contract[]
+
   @@index([name])
   @@index([city])
   @@map("clients")
@@ -198,6 +200,7 @@ model Machine {
 
   type   MachineType    @relation(fields: [typeId], references: [id], onDelete: Restrict)
   photos MachinePhoto[]
+  contractItems ContractItem[]
 
   @@index([typeId])
   @@map("machines")
@@ -218,4 +221,83 @@ model MachinePhoto {
 
   @@index([machineId, position])
   @@map("machine_photos")
+}
+
+enum ContractStatus {
+  DRAFT
+  ACTIVE
+  FINISHED
+  CANCELLED
+
+  @@map("contract_status")
+}
+
+enum PaymentMethod {
+  PIX
+  BOLETO
+  CARD
+  CASH
+  TRANSFER
+
+  @@map("payment_method")
+}
+
+enum SignatureStatus {
+  PENDING
+  DIGITAL
+  SCANNED
+
+  @@map("signature_status")
+}
+
+model Contract {
+  id              String          @id @default(uuid(7)) @db.Uuid
+  number          Int             @unique @default(autoincrement())
+  clientId        String          @map("client_id") @db.Uuid
+  status          ContractStatus  @default(DRAFT)
+  startDate       DateTime        @map("start_date") @db.Date
+  endDate         DateTime        @map("end_date") @db.Date
+  siteName        String?         @map("site_name") @db.VarChar(200)
+  siteZipCode     String?         @map("site_zip_code") @db.VarChar(8)
+  siteStreet      String?         @map("site_street") @db.VarChar(200)
+  siteNumber      String?         @map("site_number") @db.VarChar(20)
+  siteDistrict    String?         @map("site_district") @db.VarChar(100)
+  siteCity        String?         @map("site_city") @db.VarChar(100)
+  siteState       String?         @map("site_state") @db.Char(2)
+  paymentMethod   PaymentMethod   @default(PIX) @map("payment_method")
+  installments    Int             @default(1)
+  totalAmount     Decimal         @map("total_amount") @db.Decimal(12, 2)
+  notes           String?         @db.VarChar(2000)
+  signatureStatus SignatureStatus @default(PENDING) @map("signature_status")
+  activatedAt     DateTime?       @map("activated_at")
+  finishedAt      DateTime?       @map("finished_at")
+  cancelledAt     DateTime?       @map("cancelled_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  client Client         @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  items  ContractItem[]
+
+  @@index([clientId])
+  @@index([status, startDate])
+  @@map("contracts")
+}
+
+model ContractItem {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  contractId String   @map("contract_id") @db.Uuid
+  machineId  String   @map("machine_id") @db.Uuid
+  startDate  DateTime @map("start_date") @db.Date
+  endDate    DateTime @map("end_date") @db.Date
+  days       Int
+  dailyRate  Decimal  @map("daily_rate") @db.Decimal(10, 2)
+  amount     Decimal  @db.Decimal(12, 2)
+  // Só itens de contrato ativo bloqueiam a agenda da máquina
+  reserved   Boolean  @default(false)
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  machine  Machine  @relation(fields: [machineId], references: [id], onDelete: Restrict)
+
+  @@index([machineId, startDate])
+  @@map("contract_items")
 }
