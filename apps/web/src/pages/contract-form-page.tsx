@@ -108,6 +108,7 @@ export function ContractFormPage() {
   const [client, setClient] = useState<ClientOption | null>(null)
   const [clientSearch, setClientSearch] = useState('')
   const [clientResults, setClientResults] = useState<ClientOption[]>([])
+  const [clientOpen, setClientOpen] = useState(false)
   const [machines, setMachines] = useState<MachineOption[]>([])
   const [items, setItems] = useState<Item[]>([])
   const [startDate, setStartDate] = useState('')
@@ -152,24 +153,21 @@ export function ContractFormPage() {
       .finally(() => setLoading(false))
   }, [id])
 
-  // Busca de clientes enquanto digita
+  // Lista os clientes ao clicar no campo e filtra enquanto digita
   useEffect(() => {
+    if (!clientOpen) return
     const q = clientSearch.trim()
-    if (q.length < 2) {
-      setClientResults([])
-      return
-    }
     const controller = new AbortController()
     const timer = setTimeout(() => {
-      apiFetch<{ items: ClientOption[] }>(`/clients?q=${encodeURIComponent(q)}`, { signal: controller.signal })
-        .then((r) => !controller.signal.aborted && setClientResults(r.items.slice(0, 6)))
+      apiFetch<{ items: ClientOption[] }>(q ? `/clients?q=${encodeURIComponent(q)}` : '/clients', { signal: controller.signal })
+        .then((r) => !controller.signal.aborted && setClientResults(r.items.slice(0, 8)))
         .catch(() => undefined)
-    }, 300)
+    }, 250)
     return () => {
       clearTimeout(timer)
       controller.abort()
     }
-  }, [clientSearch])
+  }, [clientSearch, clientOpen])
 
   // Confere a agenda das máquinas sempre que período ou máquinas mudam
   const machineIds = items.map((i) => i.machineId).filter(Boolean).join(',')
@@ -193,6 +191,7 @@ export function ContractFormPage() {
   }, [machineIds, startDate, endDate, id, status])
 
   async function pickClient(option: ClientOption) {
+    setClientOpen(false)
     setClientSearch('')
     setClientResults([])
     // A ficha completa traz o documento inteiro e o responsável, usados no texto do contrato
@@ -353,32 +352,54 @@ export function ContractFormPage() {
             ) : (
               <div className="relative">
                 <label htmlFor="client-search" className="sr-only">
-                  Buscar cliente
+                  Buscar cliente cadastrado
                 </label>
                 <Input
                   id="client-search"
                   value={clientSearch}
                   onChange={(e) => setClientSearch(e.target.value)}
-                  placeholder="Digite o nome do cliente"
+                  onFocus={() => setClientOpen(true)}
+                  onBlur={() => setClientOpen(false)}
+                  placeholder="Clique e escolha um cliente cadastrado"
                   autoComplete="off"
+                  aria-expanded={clientOpen}
+                  aria-controls="client-options"
                   className="h-11 text-base"
                 />
-                {clientResults.length > 0 && (
-                  <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-border bg-card shadow-lg">
-                    {clientResults.map((option) => (
-                      <li key={option.id}>
-                        <button
-                          type="button"
-                          onClick={() => void pickClient(option)}
-                          className="flex min-h-11 w-full flex-col items-start px-3 py-2 text-left text-sm hover:bg-accent"
-                        >
-                          <span className="font-semibold">{option.tradeName ?? option.name}</span>
-                          <span className="text-xs text-muted-foreground">{option.document}</span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                {clientOpen && (
+                  <div id="client-options" className="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-border bg-card shadow-lg">
+                    <ul className="max-h-72 overflow-y-auto">
+                      {clientResults.map((option) => (
+                        <li key={option.id}>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => void pickClient(option)}
+                            className="flex min-h-11 w-full flex-col items-start px-3 py-2 text-left text-sm hover:bg-accent"
+                          >
+                            <span className="font-semibold">{option.tradeName ?? option.name}</span>
+                            <span className="text-xs text-muted-foreground">{option.document}</span>
+                          </button>
+                        </li>
+                      ))}
+                      {clientResults.length === 0 && (
+                        <li className="px-3 py-3 text-sm text-muted-foreground">Nenhum cliente encontrado.</li>
+                      )}
+                    </ul>
+                    <Link
+                      to="/clientes/novo"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onMouseDown={(e) => e.preventDefault()}
+                      className="flex min-h-11 items-center border-t border-border px-3 text-sm font-semibold text-ring hover:bg-accent"
+                    >
+                      + Cadastrar cliente novo (abre em outra aba)
+                    </Link>
+                  </div>
                 )}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Só clientes cadastrados podem ter contrato. Depois de cadastrar, volte aqui e busque o nome.
+                </p>
               </div>
             )}
           </Step>
