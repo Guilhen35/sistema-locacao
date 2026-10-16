@@ -6,6 +6,7 @@ import { LoginPage } from '@/pages/login-page'
 import { ClientsPage } from '@/pages/clients-page'
 import { ClientFormPage } from '@/pages/client-form-page'
 import { MachinesPage } from '@/pages/machines-page'
+import { MachineTypesPage } from '@/pages/machine-types-page'
 import { ChangePasswordPage } from '@/pages/change-password-page'
 
 function NotFound() {
@@ -53,6 +54,7 @@ export const router = createBrowserRouter([
             path: 'maquinas',
             element: <MachinesPage />,
           },
+          { path: 'maquinas/tipos', element: <MachineTypesPage /> },
           {
             path: 'contratos',
             element: <PagePlaceholder title="Contratos" description="Locações, renovações e documentos." />,
