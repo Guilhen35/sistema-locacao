@@ -7,3 +7,4 @@ export * from './auth.js';
 export * from './client.js';
 export * from './document.js';
 export * from './machine.js';
+export * from './contract.js';
