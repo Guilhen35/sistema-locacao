@@ -58,6 +58,7 @@ export class MachinesService {
         include: {
           type: { select: TYPE_SUMMARY },
           photos: { select: { id: true }, orderBy: { position: 'asc' }, take: 1 },
+          maintenances: { where: { status: 'OPEN', blocksMachine: true }, select: { id: true, description: true }, take: 1 },
           contractItems: {
             where: { reserved: true, endDate: { gt: new Date(new Date().toISOString().slice(0, 10)) } },
             orderBy: { startDate: 'asc' },

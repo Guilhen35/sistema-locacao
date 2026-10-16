@@ -8,3 +8,4 @@ export * from './client.js';
 export * from './document.js';
 export * from './machine.js';
 export * from './contract.js';
+export * from './maintenance.js';

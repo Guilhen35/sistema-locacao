@@ -134,6 +134,14 @@ export class ContractsService {
       throw new ConflictException(`Máquina indisponível: ${unavailable.map((i) => i.machine.code).join(', ')}`);
     }
 
+    const inMaintenance = await this.prisma.maintenance.findMany({
+      where: { status: 'OPEN', blocksMachine: true, machineId: { in: items.map((i) => i.machineId) } },
+      select: { machine: { select: { code: true } } },
+    });
+    if (inMaintenance.length > 0) {
+      throw new ConflictException(`Máquina em manutenção: ${inMaintenance.map((m) => m.machine.code).join(', ')}`);
+    }
+
     const conflicts = await this.conflicts(
       items.map((i) => i.machineId),
       toIso(contract.startDate),
