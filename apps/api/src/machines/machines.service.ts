@@ -28,7 +28,7 @@ function codeConflict() {
   return new ConflictException({ message: 'Dados inválidos', errors: { code: ['Já existe uma máquina com este código'] } });
 }
 
-const TYPE_SUMMARY = { id: true, name: true, category: true, powerSource: true, workingHeightM: true } as const;
+const TYPE_SUMMARY = { id: true, name: true, category: true, powerSource: true, workingHeightM: true, dailyPrice: true } as const;
 
 @Injectable()
 export class MachinesService {

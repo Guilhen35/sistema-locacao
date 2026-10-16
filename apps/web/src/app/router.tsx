@@ -8,6 +8,8 @@ import { ClientFormPage } from '@/pages/client-form-page'
 import { MachinesPage } from '@/pages/machines-page'
 import { MachineTypesPage } from '@/pages/machine-types-page'
 import { MachineFormPage } from '@/pages/machine-form-page'
+import { ContractsPage } from '@/pages/contracts-page'
+import { ContractFormPage } from '@/pages/contract-form-page'
 import { ChangePasswordPage } from '@/pages/change-password-page'
 
 function NotFound() {
@@ -60,8 +62,10 @@ export const router = createBrowserRouter([
           { path: 'maquinas/:id', element: <MachineFormPage /> },
           {
             path: 'contratos',
-            element: <PagePlaceholder title="Contratos" description="Locações, renovações e documentos." />,
+            element: <ContractsPage />,
           },
+          { path: 'contratos/novo', element: <ContractFormPage /> },
+          { path: 'contratos/:id', element: <ContractFormPage /> },
           {
             path: 'agenda',
             element: <PagePlaceholder title="Agenda" description="Calendário e linha do tempo da frota." />,
