@@ -201,6 +201,7 @@ model Machine {
   type   MachineType    @relation(fields: [typeId], references: [id], onDelete: Restrict)
   photos MachinePhoto[]
   contractItems ContractItem[]
+  maintenances Maintenance[]
 
   @@index([typeId])
   @@map("machines")
@@ -300,4 +301,58 @@ model ContractItem {
 
   @@index([machineId, startDate])
   @@map("contract_items")
+}
+
+enum MaintenanceKind {
+  PREVENTIVE
+  CORRECTIVE
+
+  @@map("maintenance_kind")
+}
+
+enum MaintenanceStatus {
+  OPEN
+  DONE
+
+  @@map("maintenance_status")
+}
+
+model Maintenance {
+  id            String            @id @default(uuid(7)) @db.Uuid
+  machineId     String            @map("machine_id") @db.Uuid
+  kind          MaintenanceKind
+  status        MaintenanceStatus @default(OPEN)
+  date          DateTime          @db.Date
+  hourMeter     Int?              @map("hour_meter")
+  description   String            @db.VarChar(2000)
+  blocksMachine Boolean           @default(true) @map("blocks_machine")
+  supplier      String?           @db.VarChar(200)
+  paymentMethod PaymentMethod?    @map("payment_method")
+  dueDate       DateTime?         @map("due_date") @db.Date
+  paid          Boolean           @default(false)
+  sendToFinance Boolean           @default(true) @map("send_to_finance")
+  totalAmount   Decimal           @map("total_amount") @db.Decimal(12, 2)
+  finishedAt    DateTime?         @map("finished_at")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  machine Machine           @relation(fields: [machineId], references: [id], onDelete: Restrict)
+  items   MaintenanceItem[]
+
+  @@index([machineId, date])
+  @@index([status])
+  @@map("maintenances")
+}
+
+model MaintenanceItem {
+  id            String  @id @default(uuid(7)) @db.Uuid
+  maintenanceId String  @map("maintenance_id") @db.Uuid
+  description   String  @db.VarChar(200)
+  quantity      Decimal @db.Decimal(10, 2)
+  unitPrice     Decimal @map("unit_price") @db.Decimal(10, 2)
+  amount        Decimal @db.Decimal(12, 2)
+
+  maintenance Maintenance @relation(fields: [maintenanceId], references: [id], onDelete: Cascade)
+
+  @@map("maintenance_items")
 }
