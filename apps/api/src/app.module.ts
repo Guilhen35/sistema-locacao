@@ -6,6 +6,7 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { AuthModule } from './auth/auth.module.js';
 import { ClientsModule } from './clients/clients.module.js';
+import { ContractsModule } from './contracts/contracts.module.js';
 import { MachinesModule } from './machines/machines.module.js';
 import { HealthController } from './health/health.controller.js';
 import { PrismaModule } from './prisma/prisma.module.js';
@@ -20,6 +21,7 @@ import { StorageModule } from './storage/storage.module.js';
     StorageModule,
     AuthModule,
     ClientsModule,
+    ContractsModule,
     MachinesModule,
   ],
   controllers: [AppController, HealthController],
