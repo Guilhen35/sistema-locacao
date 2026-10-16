@@ -26,6 +26,31 @@ interface MachineItem {
   showOnWebsite: boolean
   coverPhotoId: string | null
   type: TypeSummary
+  contractItems: {
+    startDate: string
+    endDate: string
+    contract: { id: string; number: number; client: { name: string; tradeName: string | null } }
+  }[]
+}
+
+type FleetStatus = 'AVAILABLE' | 'RENTED' | 'RESERVED' | 'BLOCKED'
+
+const STATUS: Record<FleetStatus, { label: string; badge: string; dot: string; plural: string }> = {
+  AVAILABLE: { label: 'Disponível', badge: 'bg-success', dot: 'bg-success', plural: 'Disponíveis' },
+  RENTED: { label: 'Alugada', badge: 'bg-info', dot: 'bg-info', plural: 'Alugadas' },
+  RESERVED: { label: 'Reservada', badge: 'bg-reserved', dot: 'bg-reserved', plural: 'Reservadas' },
+  BLOCKED: { label: 'Bloqueada', badge: 'bg-warning', dot: 'bg-warning', plural: 'Bloqueadas' },
+}
+
+const todayIso = () => new Date().toISOString().slice(0, 10)
+const brDate = (iso: string) => iso.slice(0, 10).split('-').reverse().slice(0, 2).join('/')
+
+// O status vem do contrato: começou = alugada; começa depois = reservada
+function fleetStatus(machine: MachineItem): FleetStatus {
+  if (machine.blocked) return 'BLOCKED'
+  const next = machine.contractItems[0]
+  if (!next) return 'AVAILABLE'
+  return next.startDate.slice(0, 10) <= todayIso() ? 'RENTED' : 'RESERVED'
 }
 
 interface MachineList {
@@ -46,6 +71,9 @@ export function typeLabel(type: TypeSummary): string {
 
 function MachineCard({ machine }: { machine: MachineItem }) {
   const details = [machine.manufacturer, machine.model, machine.year].filter(Boolean).join(' · ')
+  const status = fleetStatus(machine)
+  const next = machine.contractItems[0]
+  const clientName = next ? (next.contract.client.tradeName ?? next.contract.client.name) : ''
 
   return (
     <Link
@@ -63,12 +91,8 @@ function MachineCard({ machine }: { machine: MachineItem }) {
         ) : (
           <ImageOff aria-hidden="true" className="size-8 text-muted-foreground" />
         )}
-        <span
-          className={`absolute top-2.5 left-2.5 rounded-full px-2.5 py-1 text-xs font-semibold text-white ${
-            machine.blocked ? 'bg-warning' : 'bg-success'
-          }`}
-        >
-          {machine.blocked ? 'Bloqueada' : 'Disponível'}
+        <span className={`absolute top-2.5 left-2.5 rounded-full px-2.5 py-1 text-xs font-semibold text-white ${STATUS[status].badge}`}>
+          {STATUS[status].label}
         </span>
       </div>
       <div className="flex flex-col gap-1.5 p-4">
@@ -76,10 +100,21 @@ function MachineCard({ machine }: { machine: MachineItem }) {
           <h2 className="text-lg font-bold">{machine.code}</h2>
           <span className="text-sm text-muted-foreground">{typeLabel(machine.type)}</span>
         </div>
-        <p className="text-sm">{details || 'Sem fabricante informado'}</p>
-        {machine.blocked && machine.blockedReason && (
+        {status === 'RENTED' && next && (
+          <p className="text-sm">
+            {clientName} · devolve <strong>{brDate(next.endDate)}</strong>
+          </p>
+        )}
+        {status === 'RESERVED' && next && (
+          <p className="text-sm">
+            Sai em <strong>{brDate(next.startDate)}</strong> para {clientName}
+          </p>
+        )}
+        {status === 'AVAILABLE' && <p className="text-sm">No pátio</p>}
+        {status === 'BLOCKED' && machine.blockedReason && (
           <p className="text-sm text-muted-foreground">Motivo: {machine.blockedReason}</p>
         )}
+        <p className="text-sm text-muted-foreground">{details || 'Sem fabricante informado'}</p>
         {machine.showOnWebsite && (
           <span className="mt-1 w-fit rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-semibold text-ring">
             Aparece no site
@@ -135,8 +170,9 @@ export function MachinesPage() {
   }, [query, typeId])
 
   const counts = useMemo(() => {
-    const items = data?.items ?? []
-    return { available: items.filter((m) => !m.blocked).length, blocked: items.filter((m) => m.blocked).length }
+    const result: Record<FleetStatus, number> = { AVAILABLE: 0, RENTED: 0, RESERVED: 0, BLOCKED: 0 }
+    for (const machine of data?.items ?? []) result[fleetStatus(machine)] += 1
+    return result
   }, [data])
 
   const totalMachines = types.reduce((sum, t) => sum + t._count.machines, 0)
@@ -171,16 +207,13 @@ export function MachinesPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          { label: 'Disponíveis', value: counts.available, dot: 'bg-success' },
-          { label: 'Bloqueadas', value: counts.blocked, dot: 'bg-warning' },
-        ].map((card) => (
-          <div key={card.label} className="rounded-xl border border-border bg-card px-4 py-3.5">
+        {(Object.keys(STATUS) as FleetStatus[]).map((key) => (
+          <div key={key} className="rounded-xl border border-border bg-card px-4 py-3.5">
             <span className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span aria-hidden="true" className={`size-2.5 rounded-full ${card.dot}`} />
-              {card.label}
+              <span aria-hidden="true" className={`size-2.5 rounded-full ${STATUS[key].dot}`} />
+              {STATUS[key].plural}
             </span>
-            <span className="mt-1 block text-2xl font-bold">{card.value}</span>
+            <span className="mt-1 block text-2xl font-bold">{counts[key]}</span>
           </div>
         ))}
       </div>

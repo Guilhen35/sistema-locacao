@@ -58,6 +58,12 @@ export class MachinesService {
         include: {
           type: { select: TYPE_SUMMARY },
           photos: { select: { id: true }, orderBy: { position: 'asc' }, take: 1 },
+          contractItems: {
+            where: { reserved: true, endDate: { gt: new Date(new Date().toISOString().slice(0, 10)) } },
+            orderBy: { startDate: 'asc' },
+            take: 1,
+            select: { startDate: true, endDate: true, contract: { select: { id: true, number: true, client: { select: { name: true, tradeName: true } } } } },
+          },
         },
       }),
     ]);
