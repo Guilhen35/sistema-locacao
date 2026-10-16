@@ -9,6 +9,7 @@ import { ClientsModule } from './clients/clients.module.js';
 import { MachinesModule } from './machines/machines.module.js';
 import { HealthController } from './health/health.controller.js';
 import { PrismaModule } from './prisma/prisma.module.js';
+import { StorageModule } from './storage/storage.module.js';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     // Padrão: 120 requisições por minuto por IP em qualquer rota
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     PrismaModule,
+    StorageModule,
     AuthModule,
     ClientsModule,
     MachinesModule,
