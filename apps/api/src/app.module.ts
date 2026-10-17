@@ -12,6 +12,7 @@ import { MaintenancesModule } from './maintenances/maintenances.module.js';
 import { AgendaModule } from './agenda/agenda.module.js';
 import { FinanceModule } from './finance/finance.module.js';
 import { DashboardModule } from './dashboard/dashboard.module.js';
+import { UsersModule } from './users/users.module.js';
 import { HealthController } from './health/health.controller.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { StorageModule } from './storage/storage.module.js';
@@ -30,6 +31,7 @@ import { StorageModule } from './storage/storage.module.js';
     AgendaModule,
     FinanceModule,
     DashboardModule,
+    UsersModule,
     MaintenancesModule,
   ],
   controllers: [AppController, HealthController],

@@ -3,6 +3,7 @@ import { RequireAuth } from '@/auth/require-auth'
 import { AppLayout } from '@/components/layout/app-layout'
 import { PagePlaceholder } from '@/components/layout/page-placeholder'
 import { AgendaPage } from '@/pages/agenda-page'
+import { SettingsPage } from '@/pages/settings-page'
 import { DashboardPage } from '@/pages/dashboard-page'
 import { FinancePage } from '@/pages/finance-page'
 import { FinanceFormPage } from '@/pages/finance-form-page'
@@ -96,7 +97,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'configuracoes',
-            element: <PagePlaceholder title="Configurações" description="Dados da empresa, usuários e permissões." />,
+            element: <SettingsPage />,
           },
           {
             path: 'perfil',
