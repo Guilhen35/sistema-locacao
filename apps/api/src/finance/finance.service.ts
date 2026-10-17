@@ -152,7 +152,7 @@ export class FinanceService {
   }
 
   // Gera e atualiza lançamentos a partir de contratos e manutenções
-  private async sync() {
+  async sync() {
     const contracts = await this.prisma.contract.findMany({
       where: { status: { in: ['ACTIVE', 'FINISHED'] }, financialEntries: { none: {} } },
       select: { id: true, number: true, startDate: true, totalAmount: true, installments: true, paymentMethod: true },

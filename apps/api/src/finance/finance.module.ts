@@ -7,5 +7,6 @@ import { FinanceService } from './finance.service.js';
   imports: [AuthModule],
   controllers: [FinanceController],
   providers: [FinanceService],
+  exports: [FinanceService],
 })
 export class FinanceModule {}

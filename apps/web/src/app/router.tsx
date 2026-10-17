@@ -3,6 +3,7 @@ import { RequireAuth } from '@/auth/require-auth'
 import { AppLayout } from '@/components/layout/app-layout'
 import { PagePlaceholder } from '@/components/layout/page-placeholder'
 import { AgendaPage } from '@/pages/agenda-page'
+import { DashboardPage } from '@/pages/dashboard-page'
 import { FinancePage } from '@/pages/finance-page'
 import { FinanceFormPage } from '@/pages/finance-form-page'
 import { LoginPage } from '@/pages/login-page'
@@ -49,7 +50,7 @@ export const router = createBrowserRouter([
           {
             index: true,
             element: (
-              <PagePlaceholder title="Dashboard" description="Visão geral da frota, das locações e do financeiro." />
+              <DashboardPage />
             ),
           },
           {
