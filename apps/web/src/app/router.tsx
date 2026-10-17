@@ -2,6 +2,7 @@ import { createBrowserRouter, Link } from 'react-router'
 import { RequireAuth } from '@/auth/require-auth'
 import { AppLayout } from '@/components/layout/app-layout'
 import { PagePlaceholder } from '@/components/layout/page-placeholder'
+import { AgendaPage } from '@/pages/agenda-page'
 import { LoginPage } from '@/pages/login-page'
 import { ClientsPage } from '@/pages/clients-page'
 import { ClientFormPage } from '@/pages/client-form-page'
@@ -70,7 +71,7 @@ export const router = createBrowserRouter([
           { path: 'contratos/:id', element: <ContractFormPage /> },
           {
             path: 'agenda',
-            element: <PagePlaceholder title="Agenda" description="Calendário e linha do tempo da frota." />,
+            element: <AgendaPage />,
           },
           {
             path: 'financeiro',
