@@ -31,15 +31,17 @@ interface MachineItem {
     endDate: string
     contract: { id: string; number: number; client: { name: string; tradeName: string | null } }
   }[]
+  maintenances: { id: string; description: string }[]
 }
 
-type FleetStatus = 'AVAILABLE' | 'RENTED' | 'RESERVED' | 'BLOCKED'
+type FleetStatus = 'AVAILABLE' | 'RENTED' | 'RESERVED' | 'MAINTENANCE' | 'BLOCKED'
 
 const STATUS: Record<FleetStatus, { label: string; badge: string; dot: string; plural: string }> = {
   AVAILABLE: { label: 'Disponível', badge: 'bg-success', dot: 'bg-success', plural: 'Disponíveis' },
   RENTED: { label: 'Alugada', badge: 'bg-info', dot: 'bg-info', plural: 'Alugadas' },
   RESERVED: { label: 'Reservada', badge: 'bg-reserved', dot: 'bg-reserved', plural: 'Reservadas' },
-  BLOCKED: { label: 'Bloqueada', badge: 'bg-warning', dot: 'bg-warning', plural: 'Bloqueadas' },
+  MAINTENANCE: { label: 'Manutenção', badge: 'bg-warning', dot: 'bg-warning', plural: 'Em manutenção' },
+  BLOCKED: { label: 'Bloqueada', badge: 'bg-muted-foreground', dot: 'bg-muted-foreground', plural: 'Bloqueadas' },
 }
 
 const todayIso = () => new Date().toISOString().slice(0, 10)
@@ -48,6 +50,7 @@ const brDate = (iso: string) => iso.slice(0, 10).split('-').reverse().slice(0, 2
 // O status vem do contrato: começou = alugada; começa depois = reservada
 function fleetStatus(machine: MachineItem): FleetStatus {
   if (machine.blocked) return 'BLOCKED'
+  if (machine.maintenances.length > 0) return 'MAINTENANCE'
   const next = machine.contractItems[0]
   if (!next) return 'AVAILABLE'
   return next.startDate.slice(0, 10) <= todayIso() ? 'RENTED' : 'RESERVED'
@@ -111,6 +114,7 @@ function MachineCard({ machine }: { machine: MachineItem }) {
           </p>
         )}
         {status === 'AVAILABLE' && <p className="text-sm">No pátio</p>}
+        {status === 'MAINTENANCE' && <p className="line-clamp-2 text-sm">{machine.maintenances[0]?.description}</p>}
         {status === 'BLOCKED' && machine.blockedReason && (
           <p className="text-sm text-muted-foreground">Motivo: {machine.blockedReason}</p>
         )}
@@ -170,7 +174,7 @@ export function MachinesPage() {
   }, [query, typeId])
 
   const counts = useMemo(() => {
-    const result: Record<FleetStatus, number> = { AVAILABLE: 0, RENTED: 0, RESERVED: 0, BLOCKED: 0 }
+    const result: Record<FleetStatus, number> = { AVAILABLE: 0, RENTED: 0, RESERVED: 0, MAINTENANCE: 0, BLOCKED: 0 }
     for (const machine of data?.items ?? []) result[fleetStatus(machine)] += 1
     return result
   }, [data])
@@ -206,7 +210,7 @@ export function MachinesPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         {(Object.keys(STATUS) as FleetStatus[]).map((key) => (
           <div key={key} className="rounded-xl border border-border bg-card px-4 py-3.5">
             <span className="flex items-center gap-2 text-sm text-muted-foreground">

@@ -10,6 +10,8 @@ import { MachineTypesPage } from '@/pages/machine-types-page'
 import { MachineFormPage } from '@/pages/machine-form-page'
 import { ContractsPage } from '@/pages/contracts-page'
 import { ContractFormPage } from '@/pages/contract-form-page'
+import { MaintenancesPage } from '@/pages/maintenances-page'
+import { MaintenanceFormPage } from '@/pages/maintenance-form-page'
 import { ChangePasswordPage } from '@/pages/change-password-page'
 
 function NotFound() {
@@ -76,8 +78,10 @@ export const router = createBrowserRouter([
           },
           {
             path: 'manutencao',
-            element: <PagePlaceholder title="Manutenção" description="Manutenções preventivas, corretivas e custos." />,
+            element: <MaintenancesPage />,
           },
+          { path: 'manutencao/nova', element: <MaintenanceFormPage /> },
+          { path: 'manutencao/:id', element: <MaintenanceFormPage /> },
           {
             path: 'relatorios',
             element: <PagePlaceholder title="Relatórios" description="Relatórios gerenciais e exportações." />,
