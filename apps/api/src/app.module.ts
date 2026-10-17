@@ -10,6 +10,7 @@ import { ContractsModule } from './contracts/contracts.module.js';
 import { MachinesModule } from './machines/machines.module.js';
 import { MaintenancesModule } from './maintenances/maintenances.module.js';
 import { AgendaModule } from './agenda/agenda.module.js';
+import { FinanceModule } from './finance/finance.module.js';
 import { HealthController } from './health/health.controller.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { StorageModule } from './storage/storage.module.js';
@@ -26,6 +27,7 @@ import { StorageModule } from './storage/storage.module.js';
     ContractsModule,
     MachinesModule,
     AgendaModule,
+    FinanceModule,
     MaintenancesModule,
   ],
   controllers: [AppController, HealthController],

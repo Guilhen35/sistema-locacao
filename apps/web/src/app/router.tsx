@@ -3,6 +3,8 @@ import { RequireAuth } from '@/auth/require-auth'
 import { AppLayout } from '@/components/layout/app-layout'
 import { PagePlaceholder } from '@/components/layout/page-placeholder'
 import { AgendaPage } from '@/pages/agenda-page'
+import { FinancePage } from '@/pages/finance-page'
+import { FinanceFormPage } from '@/pages/finance-form-page'
 import { LoginPage } from '@/pages/login-page'
 import { ClientsPage } from '@/pages/clients-page'
 import { ClientFormPage } from '@/pages/client-form-page'
@@ -75,7 +77,11 @@ export const router = createBrowserRouter([
           },
           {
             path: 'financeiro',
-            element: <PagePlaceholder title="Financeiro" description="Pagamentos, contas a receber e atrasos." />,
+            element: <FinancePage />,
+          },
+          {
+            path: 'financeiro/novo',
+            element: <FinanceFormPage />,
           },
           {
             path: 'manutencao',

@@ -162,19 +162,19 @@ enum PowerSource {
 }
 
 model MachineType {
-  id                 String          @id @default(uuid(7)) @db.Uuid
-  name               String          @unique @db.VarChar(100)
-  category           MachineCategory
-  powerSource        PowerSource     @map("power_source")
-  workingHeightM     Decimal         @map("working_height_m") @db.Decimal(5, 2)
-  capacityKg         Int             @map("capacity_kg")
-  usage              String?         @db.VarChar(200)
-  dailyPrice         Decimal         @map("daily_price") @db.Decimal(10, 2)
-  weeklyPrice        Decimal?        @map("weekly_price") @db.Decimal(10, 2)
-  monthlyPrice       Decimal?        @map("monthly_price") @db.Decimal(10, 2)
-  createdAt          DateTime        @default(now()) @map("created_at")
-  updatedAt          DateTime        @updatedAt @map("updated_at")
-  archivedAt         DateTime?       @map("archived_at")
+  id             String          @id @default(uuid(7)) @db.Uuid
+  name           String          @unique @db.VarChar(100)
+  category       MachineCategory
+  powerSource    PowerSource     @map("power_source")
+  workingHeightM Decimal         @map("working_height_m") @db.Decimal(5, 2)
+  capacityKg     Int             @map("capacity_kg")
+  usage          String?         @db.VarChar(200)
+  dailyPrice     Decimal         @map("daily_price") @db.Decimal(10, 2)
+  weeklyPrice    Decimal?        @map("weekly_price") @db.Decimal(10, 2)
+  monthlyPrice   Decimal?        @map("monthly_price") @db.Decimal(10, 2)
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  archivedAt     DateTime?       @map("archived_at")
 
   machines Machine[]
 
@@ -198,10 +198,10 @@ model Machine {
   updatedAt     DateTime  @updatedAt @map("updated_at")
   archivedAt    DateTime? @map("archived_at")
 
-  type   MachineType    @relation(fields: [typeId], references: [id], onDelete: Restrict)
-  photos MachinePhoto[]
+  type          MachineType    @relation(fields: [typeId], references: [id], onDelete: Restrict)
+  photos        MachinePhoto[]
   contractItems ContractItem[]
-  maintenances Maintenance[]
+  maintenances  Maintenance[]
 
   @@index([typeId])
   @@map("machines")
@@ -276,8 +276,9 @@ model Contract {
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
 
-  client Client         @relation(fields: [clientId], references: [id], onDelete: Restrict)
-  items  ContractItem[]
+  client           Client           @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  items            ContractItem[]
+  financialEntries FinancialEntry[]
 
   @@index([clientId])
   @@index([status, startDate])
@@ -336,8 +337,9 @@ model Maintenance {
   createdAt     DateTime          @default(now()) @map("created_at")
   updatedAt     DateTime          @updatedAt @map("updated_at")
 
-  machine Machine           @relation(fields: [machineId], references: [id], onDelete: Restrict)
-  items   MaintenanceItem[]
+  machine        Machine           @relation(fields: [machineId], references: [id], onDelete: Restrict)
+  items          MaintenanceItem[]
+  financialEntry FinancialEntry?
 
   @@index([machineId, date])
   @@index([status])
@@ -355,4 +357,38 @@ model MaintenanceItem {
   maintenance Maintenance @relation(fields: [maintenanceId], references: [id], onDelete: Cascade)
 
   @@map("maintenance_items")
+}
+
+enum EntryKind {
+  RECEIVABLE
+  PAYABLE
+
+  @@map("entry_kind")
+}
+
+// Contas a receber (parcelas de contrato) e a pagar (manutenções e despesas)
+model FinancialEntry {
+  id                String         @id @default(uuid(7)) @db.Uuid
+  kind              EntryKind
+  description       String         @db.VarChar(200)
+  supplier          String?        @db.VarChar(200)
+  dueDate           DateTime       @map("due_date") @db.Date
+  amount            Decimal        @db.Decimal(12, 2)
+  paymentMethod     PaymentMethod? @map("payment_method")
+  paidAt            DateTime?      @map("paid_at") @db.Date
+  contractId        String?        @map("contract_id") @db.Uuid
+  installmentNumber Int?           @map("installment_number")
+  installmentCount  Int?           @map("installment_count")
+  maintenanceId     String?        @unique @map("maintenance_id") @db.Uuid
+  notes             String?        @db.VarChar(1000)
+  cancelledAt       DateTime?      @map("cancelled_at")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+
+  contract    Contract?    @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  maintenance Maintenance? @relation(fields: [maintenanceId], references: [id], onDelete: Restrict)
+
+  @@unique([contractId, installmentNumber])
+  @@index([kind, dueDate])
+  @@map("financial_entries")
 }
