@@ -1,6 +1,7 @@
 import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 
+// Público e sem dados: usado pela hospedagem e pelo UptimeRobot
 @Controller('health')
 export class HealthController {
   constructor(private readonly prisma: PrismaService) {}
@@ -8,11 +9,11 @@ export class HealthController {
   @Get()
   async check() {
     try {
+      // Consulta mínima: confirma o banco e mantém o projeto do Supabase ativo
       await this.prisma.$queryRaw`SELECT 1`;
       return { status: 'ok' };
     } catch {
-      // Não expõe o erro do banco para quem chamou: detalhes ficam só nos logs do servidor
-      throw new ServiceUnavailableException({ status: 'unavailable' });
+      throw new ServiceUnavailableException('indisponível');
     }
   }
 }
